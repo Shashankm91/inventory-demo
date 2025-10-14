@@ -15,6 +15,25 @@
           <input type="text" name="customer_name" value="{{ old('customer_name') }}" class="form-control" id="customer_name">
           @error('customer_name') <span class="text-danger small">{{ $message }}</span> @enderror
         </div>
+         <div class="form-group">
+          <label for="customer_name">Mobile Number</label>
+          <input type="text" name="mobile_number" value="{{ old('mobile_number') }}" class="form-control" id="mobile_number">
+          @error('mobile_number') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div>
+         <div class="form-group">
+          <label for="customer_name">Genrated By</label>
+          <input type="text" name="generated_by" value="{{ old('generated_by', auth()->user()->email) }}" class="form-control" id="generated_by"  readonly>
+          @error('generated_by') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div>
+         <div class="form-group">
+          <label for="customer_name">Generated For</label>
+          <input type="text" name="to_name" value="{{ old('to_name') }}" class="form-control" id="to_name">
+          @error('to_name') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div>
+        <div class="form-group">
+           <label for="paid_amt">Paid Amount</label>
+            <input type="text" name="paid_amount" value="{{ old('paid_amount') }}" class="form-control">
+        </div>
 
         <!-- Invoice Date -->
         <div class="form-group">
@@ -22,7 +41,7 @@
           <input type="date" name="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}" class="form-control" id="invoice_date">
           @error('invoice_date') <span class="text-danger small">{{ $message }}</span> @enderror
         </div>
-
+         
         <!-- Products Table -->
         <div class="form-group">
           <label>Products</label>
@@ -77,6 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const taxEl = document.getElementById('tax');
     const discountEl = document.getElementById('discount');
     const totalEl = document.getElementById('total');
+    // const totalel = document.getElementById('total_amt');
+
 
     function calculateTotals() {
         let subtotal = 0;
@@ -101,6 +122,8 @@ document.addEventListener('DOMContentLoaded', function() {
         taxEl.textContent = tax.toFixed(2);
         discountEl.textContent = discount.toFixed(2);
         totalEl.textContent = total.toFixed(2);
+        // totalel.value = total.toFixed(2);
+
     }
 
     checkboxes.forEach(checkbox => {
@@ -119,4 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
 @endsection

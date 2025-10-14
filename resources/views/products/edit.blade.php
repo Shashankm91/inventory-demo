@@ -1,4 +1,4 @@
-@extends('layouts.masterlayout');
+@extends('layouts.masterlayout')
 
 @section('content')
 <div class="col-12 grid-margin stretch-card">
@@ -47,12 +47,12 @@
          @if(auth()->user()->role === 'admin')
         <div class="form-group">
           <label for="cost_price">Cost Price</label>
-          <input type="number" name="cost_price" value="{{ old('cost_price') }}" class="form-control" id="stock_quantity" placeholder="Enter stock quantity">
+          <input type="number" name="cost_price" value="{{ old('cost_price',$product->cost_price) }}" class="form-control" id="stock_quantity" placeholder="Enter stock quantity">
           @error('cost_price') <span class="text-danger small">{{ $message }}</span> @enderror
         </div>
         <div class="form-group">
           <label for="selling_price">Selling Price</label>
-          <input type="number" name="selling_price" value="{{ old('selling_price') }}" class="form-control" id="stock_quantity" placeholder="Enter stock quantity">
+          <input type="number" name="selling_price" value="{{ old('selling_price',$product->selling_price) }}" class="form-control" id="stock_quantity" placeholder="Enter stock quantity">
           @error('selling_price') <span class="text-danger small">{{ $message }}</span> @enderror
         </div>
         @endif
@@ -75,4 +75,6 @@
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
 @endsection

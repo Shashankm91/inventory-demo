@@ -17,7 +17,7 @@ class QuotationController extends Controller
 {
     public function index()
     {
-        $quotations = Quotation::latest()->paginate(15);
+        $quotations = Quotation::latest()->get();
         return view('quotations.index', compact('quotations'));
     }
 
@@ -39,6 +39,10 @@ class QuotationController extends Controller
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.unit_price' => 'required|numeric|min:0',
+            'mobile_number'=> 'required|digits:10',
+            'generated_by' => 'required|string|max:255',
+            'to_name'=>'required|string|max:255',
+
         ]);
 
         // calculate totals server-side
@@ -70,6 +74,9 @@ class QuotationController extends Controller
                 'terms' => $validated['terms'] ?? null,
                 'status' => 'draft',
                 'created_by' => auth()->id() ?? null,
+                'generated_by'=> $validated['generated_by'],
+                'to_name'=>$validated['to_name'],
+                'mobile_number'=> $validated['mobile_number'],
             ]);
 
             foreach ($validated['products'] as $p) {
@@ -130,74 +137,158 @@ class QuotationController extends Controller
     }
 
     // convert quotation → invoice (transactional, checks stock)
-    public function convertToInvoice(Quotation $quotation)
-    {
-        if (!in_array($quotation->status, ['sent','accepted','draft'])) {
-            return back()->withErrors(['error' => 'Quotation cannot be converted (status: '.$quotation->status.')']);
+    // public function convertToInvoice(Quotation $quotation)
+    // {
+    //     if (!in_array($quotation->status, ['sent','accepted','draft'])) {
+    //         return back()->withErrors(['error' => 'Quotation cannot be converted (status: '.$quotation->status.')']);
+    //     }
+
+    //     DB::beginTransaction();
+    //     try {
+    //         // create invoice header using your Invoice model method
+    //         $invoiceNo = Invoice::generateInvoiceNo();
+
+    //         $invoice = Invoice::create([
+    //             'invoice_no' => $invoiceNo,
+    //             'customer_name' => $quotation->customer_name,
+    //             'invoice_date' => now()->toDateString(),
+    //             'subtotal' => $quotation->subtotal,
+    //             'tax' => $quotation->tax,
+    //             'discount' => $quotation->discount,
+    //             'total' => $quotation->total,
+    //             'created_by' => auth()->id() ?? null,
+    //         ]);
+
+    //         foreach ($quotation->items as $qItem) {
+    //             // lock product row
+    //             $product = Product::where('id', $qItem->product_id)->lockForUpdate()->first();
+
+    //             if ($product->stock_quantity < $qItem->quantity) {
+    //                 throw new \Exception("Insufficient stock for {$product->name}");
+    //             }
+
+    //             // create invoice item
+    //             InvoiceItem::create([
+    //                 'invoice_id' => $invoice->id,
+    //                 'product_id' => $product->id,
+    //                 'quantity' => $qItem->quantity,
+    //                 'unit_price' => $qItem->unit_price,
+    //                 'subtotal' => $qItem->subtotal,
+    //             ]);
+
+    //             // decrement stock and create stock movement
+    //             $product->decrement('stock_quantity', $qItem->quantity);
+    //             $product->refresh();
+
+    //             StockMovement::create([
+    //                 'product_id' => $product->id,
+    //                 'type' => 'OUT',
+    //                 'quantity' => $qItem->quantity,
+    //                 'reference_type' => 'invoice',
+    //                 'reference_id' => $invoice->id,
+    //                 'balance_after' => $product->stock_quantity,
+    //                 'note' => 'Converted from quotation ' . $quotation->quotation_no,
+    //                 'created_by' => auth()->id() ?? null,
+    //             ]);
+    //         }
+
+    //         // mark quotation converted
+    //         $quotation->update([
+    //             'status' => 'converted',
+    //             'converted_invoice_id' => $invoice->id,
+    //         ]);
+
+    //         DB::commit();
+    //         return redirect()->route('invoices.show', $invoice->id)->with('success', 'Quotation converted to invoice.');
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+    //         return back()->withErrors(['error' => $e->getMessage()]);
+    //     }
+    // }
+    public function convertToInvoice(Request $request, Quotation $quotation)
+{
+    $request->validate([
+        'paid_amount' => 'required|numeric|min:0',
+    ]);
+
+    if (!in_array($quotation->status, ['sent','accepted','draft'])) {
+        return back()->withErrors(['error' => 'Quotation cannot be converted (status: '.$quotation->status.')']);
+    }
+
+    DB::beginTransaction();
+    try {
+        $invoiceNo = Invoice::generateInvoiceNo();
+
+        // Get paid, balance, payment status
+        $paidAmount = $request->paid_amount;
+        $totalAmount = $quotation->total;
+        $balanceAmount = $totalAmount - $paidAmount;
+
+        if ($paidAmount >= $totalAmount) {
+            $paymentStatus = 'paid';
+        } elseif ($paidAmount > 0) {
+            $paymentStatus = 'partial';
+        } else {
+            $paymentStatus = 'unpaid';
         }
 
-        DB::beginTransaction();
-        try {
-            // create invoice header using your Invoice model method
-            $invoiceNo = Invoice::generateInvoiceNo();
+        // Create Invoice
+        $invoice = Invoice::create([
+            'invoice_no' => $invoiceNo,
+            'customer_name' => $quotation->customer_name,
+            'invoice_date' => now()->toDateString(),
+            'subtotal' => $quotation->subtotal,
+            'tax' => $quotation->tax,
+            'discount' => $quotation->discount,
+            'total' => $quotation->total,
+            'paid_amount' => $paidAmount,
+            'balance_amount' => $balanceAmount,
+            'payment_status' => $paymentStatus,
+            'created_by' => auth()->id() ?? null,
+        ]);
 
-            $invoice = Invoice::create([
-                'invoice_no' => $invoiceNo,
-                'customer_name' => $quotation->customer_name,
-                'invoice_date' => now()->toDateString(),
-                'subtotal' => $quotation->subtotal,
-                'tax' => $quotation->tax,
-                'discount' => $quotation->discount,
-                'total' => $quotation->total,
-                'created_by' => auth()->id() ?? null,
-            ]);
-
-            foreach ($quotation->items as $qItem) {
-                // lock product row
-                $product = Product::where('id', $qItem->product_id)->lockForUpdate()->first();
-
-                if ($product->stock_quantity < $qItem->quantity) {
-                    throw new \Exception("Insufficient stock for {$product->name}");
-                }
-
-                // create invoice item
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'product_id' => $product->id,
-                    'quantity' => $qItem->quantity,
-                    'unit_price' => $qItem->unit_price,
-                    'subtotal' => $qItem->subtotal,
-                ]);
-
-                // decrement stock and create stock movement
-                $product->decrement('stock_quantity', $qItem->quantity);
-                $product->refresh();
-
-                StockMovement::create([
-                    'product_id' => $product->id,
-                    'type' => 'OUT',
-                    'quantity' => $qItem->quantity,
-                    'reference_type' => 'invoice',
-                    'reference_id' => $invoice->id,
-                    'balance_after' => $product->stock_quantity,
-                    'note' => 'Converted from quotation ' . $quotation->quotation_no,
-                    'created_by' => auth()->id() ?? null,
-                ]);
+        foreach ($quotation->items as $qItem) {
+            $product = Product::where('id', $qItem->product_id)->lockForUpdate()->first();
+            if ($product->stock_quantity < $qItem->quantity) {
+                throw new \Exception("Insufficient stock for {$product->name}");
             }
 
-            // mark quotation converted
-            $quotation->update([
-                'status' => 'converted',
-                'converted_invoice_id' => $invoice->id,
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'product_id' => $product->id,
+                'quantity' => $qItem->quantity,
+                'unit_price' => $qItem->unit_price,
+                'subtotal' => $qItem->subtotal,
             ]);
 
-            DB::commit();
-            return redirect()->route('invoices.show', $invoice->id)->with('success', 'Quotation converted to invoice.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => $e->getMessage()]);
+            $product->decrement('stock_quantity', $qItem->quantity);
+            $product->refresh();
+
+            StockMovement::create([
+                'product_id' => $product->id,
+                'type' => 'OUT',
+                'quantity' => $qItem->quantity,
+                'reference_type' => 'invoice',
+                'reference_id' => $invoice->id,
+                'balance_after' => $product->stock_quantity,
+                'note' => 'Converted from quotation ' . $quotation->quotation_no,
+                'created_by' => auth()->id() ?? null,
+            ]);
         }
+
+        $quotation->update([
+            'status' => 'converted',
+            'converted_invoice_id' => $invoice->id,
+        ]);
+
+        DB::commit();
+        return redirect()->route('invoices.show', $invoice->id)->with('success', 'Quotation converted to invoice.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return back()->withErrors(['error' => $e->getMessage()]);
     }
+}
+
 
     // optional: expire a quotation (can be called by scheduler)
     public function expire(Quotation $quotation)

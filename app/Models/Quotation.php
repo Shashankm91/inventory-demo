@@ -19,7 +19,10 @@ class Quotation extends Model
         'status',
         'terms',
         'created_by',
-        'converted_invoice_id'
+        'converted_invoice_id',
+        'generated_by',
+        'mobile_number',
+        'to_name'
     ];
 
     public function items()

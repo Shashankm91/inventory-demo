@@ -6,8 +6,8 @@
     <h4 class="card-title">Quotations</h4>
     <a href="{{ route('quotations.create') }}" class="btn btn-primary mb-3">+ New Quotation</a>
 
-    <table class="table table-bordered">
-      <thead>
+    <table class="table table-bordered table-striped" id="quotationTable">
+      <thead class="table-dark">
         <tr>
           <th>#</th>
           <th>Quotation No</th>
@@ -38,7 +38,32 @@
       </tbody>
     </table>
 
-    {{ $quotations->links() }}
+   
   </div>
 </div>
+@endsection
+
+@section('scripts')
+<!-- ✅ 1️⃣ jQuery (only once, first) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- ✅ 2️⃣ Bootstrap JS (your template bundle) -->
+<script src="{{ asset('assets/vendors/js/vendor.bundle.base.js') }}"></script>
+
+<!-- ✅ 3️⃣ DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- ✅ 4️⃣ Your page-specific script -->
+<script>
+$(document).ready(function () {
+    if ($('#quotationTable').length) {
+        $('#quotationTable').DataTable({
+            pageLength: 10,
+            order: [[0, 'asc']],
+        });
+    }
+});
+</script>
 @endsection

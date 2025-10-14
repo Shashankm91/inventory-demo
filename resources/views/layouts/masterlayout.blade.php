@@ -17,12 +17,12 @@
         <div class="main-panel">
           <div class="content-wrapper">
             
-            @yield('content');
+            @yield('content')
             
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
-          @include('partials.footer');
+          @include('partials.footer')
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -30,7 +30,11 @@
       <!-- page-body-wrapper ends -->
     </div>
     <!-- container-scroller -->
+      @yield('scripts') 
     <!-- plugins:js -->
-   @include('partials.scripts');
+   @include('partials.scripts')
+
+   
+  
   </body>
 </html>

@@ -11,50 +11,38 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
-    {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
-    }
-
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
-    }
-
+    
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+   
+    // Show profile page
+    public function show()
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+        $user = Auth::user();
+        return view('profile.show', compact('user'));
+    }
+
+    // Update profile
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        $user = $request->user();
+        $user->name = $request->name;
+        $user->email = $request->email;
 
-        Auth::logout();
+        if ($request->password) {
+            $user->password = Hash::make($request->password);
+        }
 
-        $user->delete();
+        $user->save();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
+        return redirect()->route('profile.show')->with('success', 'Profile updated successfully!');
     }
 }

@@ -86,6 +86,9 @@ var lightColor = getComputedStyle(document.body).getPropertyValue('--light');
         body.toggleClass('sidebar-hidden');
       } else {
         body.toggleClass('sidebar-icon-only');
+        // document.getElementById('logo-text').style.display="none";
+
+
       }
     });
 

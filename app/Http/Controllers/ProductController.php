@@ -10,7 +10,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::latest()->paginate(10);
+        $products = Product::latest()->get();
 
         return view('products.index', compact('products'));
     }
@@ -57,8 +57,8 @@ class ProductController extends Controller
                 'unit'           => 'required|string|max:50',
                 'price'          => 'required|numeric|min:0',
                 'stock_quantity' => 'required|integer|min:0',
-                'cost_price'     => 'required|numeric|min:0',
-                'selling_price'  => 'required|numeric|min:0',  
+                'cost_price'     => 'numeric|min:0',
+                'selling_price'  => 'numeric|min:0',  
                 'image'          => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             ]);
 

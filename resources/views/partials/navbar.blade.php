@@ -1,12 +1,39 @@
+<style>
+  /* Ensure logo adjusts on all screen sizes */
+.navbar .logo {
+  height: 60px; /* default height */
+  width: auto;
+  object-fit: contain;
+}
+
+/* Smaller screens */
+@media (max-width: 768px) {
+  .navbar .logo {
+    height: 45px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .navbar .logo {
+    height: 35px;
+  }
+}
+</style>
 <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-          <!-- <a class="navbar-brand brand-logo" href="index.html"><img src="{{asset('assets/images/logo.jpg')}}" alt="logo" width="120" height="40"/></a>
-          <a class="navbar-brand brand-logo-mini" href="index.html"><img src="{{asset('assets/images/logo.jpg')}}" alt="logo" /></a> -->
+         <a class="navbar-brand brand-logo" href="{{url('/dashboard')}}"><img src="{{asset('assets/images/logo_new.jpeg')}}" alt="logo" style="
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+"/></a>
+          <a class="navbar-brand brand-logo-mini" href="{{url('/dashboard')}}"><img src="{{asset('assets/images/logo_new.jpeg')}}" alt="logo" /></a> 
           <a class="navbar-brand brand-logo text-primary fw-bold fs-3" href="{{url('/')}}">
-            <span class="brand-highlight">SM</span> Inventory<span class="text-dark">MS</span>
+            <!-- <span class="brand-highlight">SM</span> Inventory<span class="text-dark">MS</span> -->
           </a>
-         <a class="navbar-brand brand-logo-mini text-primary fw-bold fs-4" href="index.html">
-          SM
+         <a class="navbar-brand brand-logo-mini text-primary fw-bold fs-4 " href="index.html" id="logo-text">
+          <img src="{{asset('assets/images/logo_new.jpeg')}}" alt="logo" class="img-fluid logo"/>
+           <!-- RM  -->
         </a>
 
         </div>
@@ -23,15 +50,19 @@
                   <span class="availability-status online"></span>
                 </div>
                 <div class="nav-profile-text">
-                  <p class="mb-1 text-black">David Greymaax</p>
+                  <p class="mb-1 text-black">{{ auth()->user()->name}}</p>
                 </div>
               </a>
               <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item" href="#">
-                  <i class="mdi mdi-cached me-2 text-success"></i> Activity Log </a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">
-                  <i class="mdi mdi-logout me-2 text-primary"></i> Signout </a>
+                <a class="dropdown-item" href="{{ route('profile.update') }}">
+                  <i class="mdi mdi-profile me-2 text-success"></i>Profile</a>
+                
+                <form action="{{route('logout')}}" method="POST">
+                  @csrf
+                  <button class="dropdown-item" href="{{route('logout')}}" type="submit">
+                    <i class="mdi mdi-logout me-2 text-primary"></i> Signout 
+                  </button>
+                </form>
               </div>
             </li>
             <li class="nav-item nav-logout d-none d-lg-block">

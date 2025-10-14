@@ -1,4 +1,4 @@
-@extends('layouts.masterlayout');
+@extends('layouts.masterlayout')
 @php
     use App\Models\Product;
     use App\Models\Invoice;
@@ -119,3 +119,8 @@
               </div>
             </div> -->
 @endsection
+
+<!-- ✅ 1️⃣ jQuery (only once, first) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- ✅ 2️⃣ Bootstrap JS (your template bundle) -->
+<script src="{{ asset('assets/vendors/js/vendor.bundle.base.js') }}"></script>

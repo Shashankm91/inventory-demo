@@ -13,7 +13,21 @@
         <input type="text" name="customer_name" value="{{ old('customer_name') }}" class="form-control">
         @error('customer_name') <small class="text-danger">{{ $message }}</small> @enderror
       </div>
-
+        <div class="form-group">
+          <label for="customer_name">Mobile Number</label>
+          <input type="text" name="mobile_number" value="{{ old('mobile_number') }}" class="form-control" id="mobile_number">
+          @error('mobile_number') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div>
+         <div class="form-group">
+          <label for="customer_name">Genrated By</label>
+          <input type="text" name="generated_by" value="{{ old('generated_by', auth()->user()->email) }}" class="form-control" id="generated_by"  readonly>
+          @error('generated_by') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div>
+         <div class="form-group">
+          <label for="customer_name">Generated For</label>
+          <input type="text" name="to_name" value="{{ old('to_name') }}" class="form-control" id="to_name">
+          @error('to_name') <span class="text-danger small">{{ $message }}</span> @enderror
+        </div> 
       <!-- <div class="mb-3">
         <label class="form-label">Customer Email (optional)</label>
         <input type="email" name="customer_email" value="{{ old('customer_email') }}" class="form-control">
