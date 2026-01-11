@@ -123,3 +123,7 @@ var lightColor = getComputedStyle(document.body).getPropertyValue('--light');
   
   });
 })(jQuery);
+
+document.querySelector('.navbar-toggler').addEventListener('click', function() {
+  document.querySelector('.navbar').classList.toggle('minimized');
+});

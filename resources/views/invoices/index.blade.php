@@ -5,7 +5,8 @@
     <h2 class="mb-4">All Invoices</h2>
     <a href="{{ route('invoices.create') }}" class="btn btn-primary mb-3">+ Create Invoice</a>
 
-    <table class="table table-bordered table-striped" id="invoiceTable">
+   <div class="table-responsive">
+     <table class="table table-bordered table-striped" id="invoiceTable">
         <thead class="table-dark">
             <tr>
                 <th>#</th>
@@ -42,6 +43,7 @@
             @endforelse
         </tbody>
     </table>
+   </div>
 </div>
 @endsection
 

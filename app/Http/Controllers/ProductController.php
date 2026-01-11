@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Imports\ProductsImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class ProductController extends Controller
 {
@@ -27,16 +30,25 @@ class ProductController extends Controller
                 'name'           => 'required|string|max:255',
                 'category'       => 'required|string|max:100',
                 'unit'           => 'required|string|max:50',
-                'price'          => 'required|numeric|min:0',
+                // 'price'          => 'required|numeric|min:0',
                 'stock_quantity' => 'required|integer|min:0',
                 'cost_price'     => 'required|numeric|min:0',
-                'selling_price'  => 'required|numeric|min:0',  
+                'selling_price'  => 'required|numeric|min:0',
                 'image'          => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             ]);
         // Handle image upload
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('products', 'public');
+            // $validated['image'] = $request->file('image')->move(public_path('products'), $filename);
+
         }
+
+        // if ($request->hasFile('image')) {
+        //     $image = $request->file('image');
+        //     $filename = time() . '.' . $image->getClientOriginalExtension();
+        //     $image->move(public_path('products'), $filename);
+        //     $validated['image'] = 'products/' . $filename;
+        // }
 
         Product::create($validated);
 
@@ -55,10 +67,10 @@ class ProductController extends Controller
                 'name'           => 'required|string|max:255',
                 'category'       => 'required|string|max:100',
                 'unit'           => 'required|string|max:50',
-                'price'          => 'required|numeric|min:0',
+                // 'price'          => 'required|numeric|min:0',
                 'stock_quantity' => 'required|integer|min:0',
-                'cost_price'     => 'numeric|min:0',
-                'selling_price'  => 'numeric|min:0',  
+                'cost_price'     => 'required|numeric|min:0',
+                'selling_price'  => 'required|numeric|min:0',
                 'image'          => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             ]);
 
@@ -94,6 +106,28 @@ class ProductController extends Controller
     } catch (\Exception $e) {
         \Log::error("Error deleting product: " . $e->getMessage());
         return redirect()->route('products.index')->with('error', 'Failed to delete product.');
+    }
+}
+
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls'
+    ]);
+
+    try {
+        Excel::import(new ProductsImport, $request->file('file'));
+
+        return redirect()
+            ->route('products.index')
+            ->with('success', 'Products imported successfully.');
+
+    } catch (ValidationException $e) {
+
+        return back()
+            ->withErrors($e->failures())
+            ->withInput()
+            ->with('import_modal', true);
     }
 }
 

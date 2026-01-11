@@ -17,16 +17,16 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
-                
+
                     <!-- <x-application-logo class="w-20 h-20 fill-current text-gray-500" /> -->
                       <a class="navbar-brand brand-logo" href="index.html">
-                        <img src="{{asset('assets/images/logo_new.jpeg')}}" alt="logo" style="
-                            height:100px;
+                        <img src="{{asset('assets/images/logo_latest.png')}}" alt="logo" style="
+                            height:250px;
                             width: auto;
                             object-fit: contain;
                             "/>
                       </a>
-                
+
             </div>
 
             <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">

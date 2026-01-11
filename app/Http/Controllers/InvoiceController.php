@@ -120,76 +120,186 @@ class InvoiceController extends Controller
 
             //     return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
             // }
+// public function store(Request $request)
+// {
+//     $validated = $request->validate([
+//         'customer_name' => 'required|string|max:255',
+//         'mobile_number' => 'required|digits:10',
+//         'generated_by'  => 'required|string|max:255',
+//         'invoice_date'  => 'required|date',
+//         'products'      => 'required|array',
+//         'products.*.id' => 'required|exists:products,id',
+//         'products.*.quantity' => 'required|integer|min:1',
+//         'products.*.unit_price' => 'required|numeric|min:0',
+//         'to_name'       => 'required|string|max:255',
+//         'paid_amount'  =>'required'
+//     ]);
+
+//     $invoiceNo = Invoice::generateInvoiceNo(); // Use your model method
+
+//     $subtotal = 0;
+//     $invoiceItems = [];
+
+//     foreach ($validated['products'] as $item) {
+//         $product = Product::findOrFail($item['id']);
+
+//         if ($product->stock_quantity < $item['quantity']) {
+//             return back()->withErrors(['products' => "Not enough stock for {$product->name}"])->withInput();
+//         }
+
+//         $product->decrement('stock_quantity', $item['quantity']);
+
+//         $itemSubtotal = $item['quantity'] * $item['unit_price'];
+//         $subtotal += $itemSubtotal;
+
+//         $invoiceItems[] = [
+//             'product_id' => $product->id,
+//             'quantity'   => $item['quantity'],
+//             'unit_price' => $item['unit_price'],
+//             'subtotal'   => $itemSubtotal,
+//         ];
+//     }
+
+//     // Example tax and discount (demo)
+//     $tax = $subtotal * 0.10;
+//     $discount = $subtotal * 0.05;
+//     $total = $subtotal + $tax - $discount;
+
+//     $paidAmount = $validated['paid_amount'] ?? 0;
+//     $balanceAmount = $total - $paidAmount;
+
+//     $invoice = Invoice::create([
+//         'invoice_no'    => $invoiceNo,
+//         'customer_name' => $validated['customer_name'],
+//         'invoice_date'  => $validated['invoice_date'],
+//         'subtotal'      => $subtotal,
+//         'tax'           => $tax,
+//         'discount'      => $discount,
+//         'total'         => $total,
+//         'paid_amount'   => $paidAmount,
+//         'balance_amount'=> $balanceAmount,
+//         'created_by'    => auth()->id() ?? null,
+//         'mobile_number' => $validated['mobile_number'],
+//         'generated_by'  => $validated['generated_by'],
+//         'to_name'       => $validated['to_name']
+//     ]);
+
+//     foreach ($invoiceItems as $item) {
+//         $invoice->items()->create($item);
+//     }
+
+//     return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
+// }
 public function store(Request $request)
 {
     $validated = $request->validate([
-        'customer_name' => 'required|string|max:255',
+        'customer_name' => 'required',
         'mobile_number' => 'required|digits:10',
-        'generated_by'  => 'required|string|max:255',
+        'generated_by'  => 'required',
+        'to_name'       => 'required',
         'invoice_date'  => 'required|date',
         'products'      => 'required|array',
-        'products.*.id' => 'required|exists:products,id',
-        'products.*.quantity' => 'required|integer|min:1',
-        'products.*.unit_price' => 'required|numeric|min:0',
-        'to_name'       => 'required|string|max:255',
-        'paid_amount'  =>'required'          
+        'tax'           => 'required|numeric|min:0',
+        'discount'      => 'required|numeric|min:0',
+        'paid_amount'   => 'nullable|numeric|min:0',
     ]);
-
-    $invoiceNo = Invoice::generateInvoiceNo(); // Use your model method
 
     $subtotal = 0;
     $invoiceItems = [];
 
-    foreach ($validated['products'] as $item) {
-        $product = Product::findOrFail($item['id']);
+    foreach ($request->products as $productId => $item) {
 
-        if ($product->stock_quantity < $item['quantity']) {
-            return back()->withErrors(['products' => "Not enough stock for {$product->name}"])->withInput();
+        // ⛔ Skip unchecked products
+        if (!isset($item['selected'])) {
+            continue;
         }
 
-        $product->decrement('stock_quantity', $item['quantity']);
+        // ⛔ Hard guard – fixes undefined quantity error
+        if (
+            !isset($item['quantity']) ||
+            !isset($item['unit_price']) ||
+            $item['quantity'] <= 0
+        ) {
+            return back()->withErrors([
+                'products' => 'Invalid product quantity or price'
+            ])->withInput();
+        }
 
-        $itemSubtotal = $item['quantity'] * $item['unit_price'];
-        $subtotal += $itemSubtotal;
+        $product = Product::findOrFail($item['id']);
+
+        // ⛔ Out of stock
+        if ($product->stock_quantity <= 0) {
+            return back()->withErrors([
+                'products' => "{$product->name} is out of stock"
+            ])->withInput();
+        }
+
+        // ⛔ Not enough stock
+        if ($product->stock_quantity < $item['quantity']) {
+            return back()->withErrors([
+                'products' => "Not enough stock for {$product->name}"
+            ])->withInput();
+        }
+
+        $lineTotal = $item['quantity'] * $item['unit_price'];
+        $subtotal += $lineTotal;
 
         $invoiceItems[] = [
             'product_id' => $product->id,
             'quantity'   => $item['quantity'],
             'unit_price' => $item['unit_price'],
-            'subtotal'   => $itemSubtotal,
+            'subtotal'   => $lineTotal,
         ];
     }
 
-    // Example tax and discount (demo)
-    $tax = $subtotal * 0.10;
-    $discount = $subtotal * 0.05;
-    $total = $subtotal + $tax - $discount;
+    // ⛔ No product selected
+    if (count($invoiceItems) === 0) {
+        return back()->withErrors([
+            'products' => 'Please select at least one product'
+        ])->withInput();
+    }
 
-    $paidAmount = $validated['paid_amount'] ?? 0;
-    $balanceAmount = $total - $paidAmount;
+    $tax      = $validated['tax'];
+    $discount = $validated['discount'];
+    $total    = $subtotal + $tax - $discount;
+
+    $paid    = $validated['paid_amount'] ?? 0;
+    $balance = $total - $paid;
+
+    $status = $balance <= 0
+        ? 'paid'
+        : ($paid > 0 ? 'partial' : 'unpaid');
 
     $invoice = Invoice::create([
-        'invoice_no'    => $invoiceNo,
-        'customer_name' => $validated['customer_name'],
-        'invoice_date'  => $validated['invoice_date'],
-        'subtotal'      => $subtotal,
-        'tax'           => $tax,
-        'discount'      => $discount,
-        'total'         => $total,
-        'paid_amount'   => $paidAmount,
-        'balance_amount'=> $balanceAmount,
-        'created_by'    => auth()->id() ?? null,
-        'mobile_number' => $validated['mobile_number'],
-        'generated_by'  => $validated['generated_by'],
-        'to_name'       => $validated['to_name']
+        'invoice_no'     => Invoice::generateInvoiceNo(),
+        'customer_name'  => $validated['customer_name'],
+        'invoice_date'   => $validated['invoice_date'],
+        'subtotal'       => $subtotal,
+        'tax'            => $tax,
+        'discount'       => $discount,
+        'total'          => $total,
+        'paid_amount'    => $paid,
+        'balance_amount' => $balance,
+        'payment_status' => $status,
+        'created_by'     => auth()->id(),
+        'mobile_number'  => $validated['mobile_number'],
+        'generated_by'   => $validated['generated_by'],
+        'to_name'        => $validated['to_name'],
     ]);
 
     foreach ($invoiceItems as $item) {
         $invoice->items()->create($item);
+
+        Product::where('id', $item['product_id'])
+            ->decrement('stock_quantity', $item['quantity']);
     }
 
-    return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
+    return redirect()->route('invoices.index')
+        ->with('success', 'Invoice created successfully');
 }
+
+
+
 
     public function show(Invoice $invoice)
     {
@@ -200,9 +310,10 @@ public function store(Request $request)
     {
     $invoice = Invoice::findOrFail($id);
 
-    $pdf = PDF::loadView('invoices.pdf', compact('invoice'));
+    $pdf = PDF::loadView('invoices.pdf', compact('invoice'))->setPaper('a5', 'portrait');
 
-    return $pdf->download('invoice_'.$invoice->id.'.pdf');
+
+    return $pdf->download('invoice_'.$invoice->invoice_no.'.pdf');
     }
     public function destroy($id)
     {

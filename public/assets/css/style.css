@@ -25208,6 +25208,28 @@ dl li {
   width: calc(100% - 260px);
   height: 70px;
 }
+
+/* Initially hide the mini text logo */
+#logo-text {
+  display: none;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #9b59b6; /* match your theme */
+}
+
+/* Show only on minimized sidebar */
+.sidebar-minimized #logo-text {
+  display: flex;
+  justify-content: center;  /* horizontally center */
+  align-items: center;      /* vertically center */
+  height: 60px;             /* same as sidebar brand height */
+  width: 100%;
+}
+
+/* Hide the image when text is shown */
+.sidebar-minimized .brand-logo-mini img {
+  display: none;
+}
 @media (max-width: 991px) {
   .navbar .navbar-menu-wrapper {
     width: auto;
@@ -26274,6 +26296,14 @@ dl li {
   flex-direction: column;
 }
 @media (max-width: 991px) {
+
+  .navbar.minimized #logo-text {
+    display: block;
+  }
+
+  .navbar.minimized .brand-logo-mini img {
+    display: none;
+  }
   .main-panel {
     margin-left: 0;
     width: 100%;
@@ -26298,3 +26328,14 @@ dl li {
 }
 
 /*# sourceMappingURL=maps/style.css.map */
+ @media (max-width: 768px) {
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling for iOS */
+  }
+
+  .table-responsive table {
+    min-width: 700px; /* or set a width wider than mobile screen */
+  }
+}

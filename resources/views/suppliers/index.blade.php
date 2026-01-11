@@ -19,7 +19,8 @@
         </div>
     </form> -->
     
-          <table class="table table-bordered table-striped" id="supplierTable">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="supplierTable">
         <thead class="table-dark">
             <tr>
                 <th>#</th>
@@ -61,6 +62,7 @@
             @endforelse
         </tbody>
     </table>
+    </div>
     
    
 

@@ -6,7 +6,8 @@
     <h4 class="card-title">Quotations</h4>
     <a href="{{ route('quotations.create') }}" class="btn btn-primary mb-3">+ New Quotation</a>
 
-    <table class="table table-bordered table-striped" id="quotationTable">
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" id="quotationTable">
       <thead class="table-dark">
         <tr>
           <th>#</th>
@@ -30,6 +31,13 @@
           <td>
             <a href="{{ route('quotations.show', $q->id) }}" class="btn btn-sm btn-info">View</a>
             <a href="{{ route('quotations.pdf', $q->id) }}" class="btn btn-sm btn-secondary">PDF</a>
+             <!-- 🗑️ Delete button -->
+              <form action="{{ route('quotations.destroy', $q->id) }}" method="POST" class="d-inline"
+                    onsubmit="return confirm('Are you sure you want to delete this quotation?');">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+              </form>
           </td>
         </tr>
         @empty
@@ -37,6 +45,7 @@
         @endforelse
       </tbody>
     </table>
+    </div>
 
    
   </div>
