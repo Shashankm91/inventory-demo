@@ -63,7 +63,7 @@
           <input type="file" name="image" class="form-control" id="image">
           @if($product->image)
             <div class="mt-2">
-              <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image" width="80">
+              <img src="{{ asset($product->image) }}" alt="Product Image" width="60" class="img-fluid">
             </div>
           @endif
           @error('image') <span class="text-danger small">{{ $message }}</span> @enderror

@@ -13,6 +13,7 @@ class ProductController extends Controller
 {
     public function index()
     {
+        // dd('Index hit');
         $products = Product::latest()->get();
 
         return view('products.index', compact('products'));
@@ -34,14 +35,21 @@ class ProductController extends Controller
                 'stock_quantity' => 'required|integer|min:0',
                 'cost_price'     => 'required|numeric|min:0',
                 'selling_price'  => 'required|numeric|min:0',
-                'image'          => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+                'image'          => 'nullable|image|mimes:jpg,jpeg,png,gif',
             ]);
         // Handle image upload
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('products', 'public');
-            // $validated['image'] = $request->file('image')->move(public_path('products'), $filename);
+            $image = $request->file('image');
 
-        }
+            // Unique filename (time + random)
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            // Move to public/uploads/products
+            $image->move(public_path('uploads/products'), $filename);
+
+            // Save path in DB
+            $validated['image'] = 'uploads/products/' . $filename;
+    }
 
         // if ($request->hasFile('image')) {
         //     $image = $request->file('image');
@@ -75,13 +83,25 @@ class ProductController extends Controller
             ]);
 
         // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+       if ($request->hasFile('image')) {
+
+            // Old image delete
+            if ($product->image && file_exists(public_path($product->image))) {
+                unlink(public_path($product->image));
             }
-            $validated['image'] = $request->file('image')->store('products', 'public');
-        }
+
+            $image = $request->file('image');
+
+            // Unique filename
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            // Move new image
+            $image->move(public_path('uploads/products'), $filename);
+
+            // Save new path
+            $validated['image'] = 'uploads/products/' . $filename;
+         }
+
 
         $product->update($validated);
 
@@ -118,16 +138,14 @@ public function import(Request $request)
     try {
         Excel::import(new ProductsImport, $request->file('file'));
 
-        return redirect()
-            ->route('products.index')
-            ->with('success', 'Products imported successfully.');
+        return response()->json([
+            'success' => true
+        ]);
 
-    } catch (ValidationException $e) {
-
-        return back()
-            ->withErrors($e->failures())
-            ->withInput()
-            ->with('import_modal', true);
+    } catch (\Exception $e) {
+        return response()->json([
+            'errors' => ['file' => ['Import failed. Check file format/data.']]
+        ], 422);
     }
 }
 

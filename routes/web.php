@@ -12,6 +12,8 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
+
+
 // Dashboard Route (UPDATED)
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

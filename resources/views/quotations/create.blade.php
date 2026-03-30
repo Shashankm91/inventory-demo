@@ -11,7 +11,10 @@
       <!-- Customer Info -->
       <div class="mb-3">
         <label>Customer Name</label>
-        <input type="text" name="customer_name" class="form-control" required>
+        <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name') }}">
+         @error('customer_name')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
 
       <div class="mb-3">
@@ -27,6 +30,7 @@
       <div class="mb-3">
         <label>Generated For</label>
         <input type="text" name="to_name" class="form-control" required>
+
       </div>
 
       <!-- Dates -->
